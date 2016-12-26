@@ -4,6 +4,8 @@
             [sparql-to-csv.endpoint :as endpoint]
             [sparql-to-csv.util :as util]
             [sparql-to-csv.mustache :as mustache]
+            [sparql-to-csv.spec :as spec]
+            [clojure.spec :as s]
             [clojure.tools.cli :refer [parse-opts]]
             [mount.core :as mount]
             [clojure.java.io :as io]
@@ -35,9 +37,10 @@
           (util/die message))))
 
 (defn- validate-params
-  [{:keys [query]}]
-  ; TODO: clojure.spec validation
-  )
+  [params]
+  (when-not (s/valid? ::spec/config params)
+    (util/die (str "The provided arguments are invalid.\n\n"
+                   (s/explain-str ::spec/config params)))))
 
 (defmulti has-input?
   "Test if `input` provides something."
@@ -55,7 +58,7 @@
     (boolean c)))
 
 (defn- main
-  [{:keys [endpoint input]
+  [{:keys [::spec/endpoint ::spec/input]
     :as params}
    template]
   (validate-params params)
@@ -79,47 +82,56 @@
 ; ----- Private vars -----
 
 (def ^:private cli-options
-  [["-e" "--endpoint ENDPOINT" "SPARQL endpoint's URL"]
+  [["-e" "--endpoint ENDPOINT" "SPARQL endpoint's URL"
+    :id ::spec/endpoint]
    ["-o" "--output OUTPUT" "Path to the output file"
+    :id ::spec/output
     :parse-fn io/as-file
     :default *out*
     :default-desc "STDIN"]
    ["-i" "--input INPUT" "Path to the input file"
+    :id ::spec/input
     :validate [util/file-exists? "The input file does not exist."]
     :parse-fn io/as-file
     :default *in*
     :default-desc "STDOUT"]
    ["-p" "--page-size PAGE_SIZE" "Number of results to fetch in one request"
+    :id ::spec/page-size
     :parse-fn util/->integer
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
    [nil "--extend" "Extend piped CSV input with the new results instead of replacing it."
-    :id :extend?
+    :id ::spec/extend?
     :default false]
    ["-d" "--delimiter DELIMITER" "Character to delimit cells in the output"
+    :id ::spec/delimiter
     :default \,]
    [nil "--sleep SLEEP" "Number of miliseconds to pause between requests"
+    :id ::spec/sleep
     :parse-fn util/->integer
     :validate [non-negative? "Pause duration must be a non-negative number."]
     :default 0]
    [nil "--start-from START_FROM" "Starting offset to skip initial results"
+    :id ::spec/start-from
     :parse-fn util/->integer
     :validate [non-negative? "Starting offset must be a non-negative number."]
     :default 0]
    [nil "--max-retries MAX_RETRIES" "Number of attempts to retry a failed request"
+    :id ::spec/max-retries
     :parse-fn util/->integer
     :validate [non-negative? "Number of retries must be a non-negative number."]
     :default 3]
    [nil "--parallel" "Execute queries in parallel"
-    :id :parallel?
+    :id ::spec/parallel?
     :default false]
-   ["-h" "--help" "Display help information"]])
+   ["-h" "--help" "Display help information"
+    :id ::spec/help?]])
 
 ; ----- Public functions -----
 
 (defn -main
   [& args]
-  (let [{{:keys [help]
+  (let [{{:keys [::spec/help]
           :as params} :options
          :keys [arguments errors summary]} (parse-opts args cli-options)
         [template] (filter (partial not= "-") arguments)]

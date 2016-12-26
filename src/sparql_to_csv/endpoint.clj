@@ -1,5 +1,6 @@
 (ns sparql-to-csv.endpoint
-  (:require [sparql-to-csv.util :as util] 
+  (:require [sparql-to-csv.util :as util]
+            [sparql-to-csv.spec :as spec]
             [mount.core :as mount :refer [defstate]]
             [clj-http.client :as client]
             [clojure.string :as string]
@@ -7,7 +8,7 @@
 
 (defn init-endpoint
   "Ping endpoint to test if it is up." 
-  [{:keys [endpoint max-retries sleep]}]
+  [{:keys [::spec/endpoint ::spec/max-retries ::spec/sleep]}]
   (try+ (let [virtuoso? (-> endpoint
                             (client/head {:throw-entire-message? true})
                             (get-in [:headers "Server"] "")

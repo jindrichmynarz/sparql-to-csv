@@ -2,6 +2,7 @@
   (:require [sparql-to-csv.endpoint :refer [endpoint]]
             [sparql-to-csv.mustache :as mustache]
             [sparql-to-csv.util :as util]
+            [sparql-to-csv.spec :as spec]
             [clj-http.client :as client]
             [stencil.core :refer [render-string]]
             [slingshot.slingshot :refer [throw+ try+]]
@@ -82,7 +83,9 @@
     (format-query-parse-exception query exception)))
 
 (defn csv-seq
-  [{:keys [delimiter extend? output parallel? start-from]
+  "Executes a query generated from SPARQL `template` for each item from `params`.
+  Optionally extends input `lines` with the obtained SPARQL results."
+  [{:keys [::spec/delimiter ::spec/extend? ::spec/output ::spec/parallel? ::spec/start-from]
     :as params}
    template
    param-seq
@@ -111,7 +114,7 @@
 
 (defn paged-query
   "Run the query from `template` split into LIMIT/OFFSET delimited pages."
-  [{:keys [page-size start-from]
+  [{:keys [::spec/page-size ::spec/start-from]
     :as params}
    template]
   (csv-seq params
@@ -121,7 +124,7 @@
 
 (defn piped-query
   "Run the query from `template` with each line of input provided as template parameters."
-  [{:keys [input]
+  [{:keys [::spec/input]
     :as params}
    template]
   (with-open [reader (io/reader input)]
