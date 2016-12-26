@@ -14,46 +14,10 @@
 
 ; ----- Private functions -----
 
-(defn xml-schema->data-type
-  "Coerce a XML Schema `data-type`."
-  [^String data-type]
-  (if (string/starts-with? data-type (util/xsd))
-    (keyword "sparql-to-csv.util" (string/replace data-type (util/xsd) ""))
-    data-type))
-
-(defmulti format-binding
-  "Format a SPARQL result binding"
-  (fn [data-type _] (xml-schema->data-type data-type)))
-
-(defmethod format-binding ::util/integer
-  [_ content]
-  (util/->integer content))
-
-(defmethod format-binding ::util/double
-  [_ content]
-  (util/->double content))
-
-(defmethod format-binding ::util/float
-  [_ content]
-  (util/->double content))
-
-(defmethod format-binding :default
-  [_ content]
-  content)
-
 (defn- get-binding
   "Get binding for `variable` from `result`."
   [result variable]
-  (let [{{:keys [datatype]} :attrs
-         [content & _] :content
-         :keys [tag]} (zip-xml/xml1-> result
-                                      :binding
-                                      (zip-xml/attr= :name variable)
-                                      zip/down
-                                      zip/node)]
-    (if (= tag :literal)
-      (format-binding datatype content)
-      content)))
+  (zip-xml/xml1-> result :binding (zip-xml/attr= :name variable) zip-xml/text))
 
 (defn sparql-results->clj
   "Convert SPARQL `results` into Clojure data structures.

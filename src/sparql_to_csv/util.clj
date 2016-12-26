@@ -1,28 +1,5 @@
 (ns sparql-to-csv.util
-  (:require [clojure.string :as string]
-            [clojure.java.io :as io]))
-
-(derive ::decimal ::double)
-(derive ::nonPositiveInteger ::integer)
-(derive ::long ::integer)
-(derive ::nonNegativeInteger ::integer)
-(derive ::negativeInteger ::nonPositiveInteger)
-(derive ::int ::long)
-(derive ::short ::int)
-(derive ::byte ::short)
-(derive ::unsignedLong ::nonNegativeInteger)
-(derive ::positiveInteger ::nonNegativeInteger)
-(derive ::unsignedInt ::unsignedLong)
-(derive ::unsignedShort ::unsignedInt)
-(derive ::unsignedByte ::unsignedShort)
-
-(defn ->double
-  [s]
-  (Double/parseDouble s))
-
-(defn ->float
-  [s]
-  (Float/parseFloat s))
+  (:require [clojure.string :as string]))
 
 (defn ->integer
   [s]
@@ -58,11 +35,3 @@
   (lazy-seq
     (if (seq colls)
       (concat (first colls) (lazy-cat' (next colls))))))
-
-(defn- prefix
-  "Builds a function for compact IRIs in the namespace `iri`."
-  [iri]
-  (partial str iri))
-
-(def xsd
-  (prefix "http://www.w3.org/2001/XMLSchema#"))
