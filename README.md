@@ -18,6 +18,12 @@ Then you can run the created executable file to find out about the configuration
 target/sparql_to_csv --help
 ```
 
+Example of use:
+
+```sh
+target/sparql_to_csv --endpoint http://localhost:8890/sparql --page-size 1000 paged_query.mustache > results.csv
+```
+
 There are two main use cases for this tool.
 
 ### Paged queries
@@ -88,7 +94,7 @@ The input CSV must have a header with column names. In order to be usable in Mus
 
 Piped queries enable to create data processing pipelines. For instance, if the first query is stored in the `persons.mustache` file and the second query is stored as `describe_person.mustache`, then we can run them in pipeline using the following command:
 
-```bash
+```sh
 sparql_to_csv -e http://dbpedia.org/sparql persons.mustache |
   sparql_to_csv -e http://dbpedia.org/sparql describe_person.mustache
 ```
