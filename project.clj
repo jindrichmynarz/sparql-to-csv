@@ -21,7 +21,9 @@
                                                     com.sun.jmx/jmxri]]]
   :main sparql-to-csv.cli
   :profiles {:dev {:plugins [[lein-binplus "0.4.2"]]}
-             :test {:resource-paths ["test/resources"]}
+             :test {:dependencies [[org.clojure/test.check "0.9.0"]
+                                   [com.gfredericks/test.chuck "0.2.7"]]
+                    :resource-paths ["test/resources"]}
              :uberjar {:aot :all
                        :uberjar-name "sparql_to_csv.jar"}}
   :bin {:name "sparql_to_csv"})

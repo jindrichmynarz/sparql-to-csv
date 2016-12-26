@@ -1,5 +1,6 @@
 (ns sparql-to-csv.sparql
   (:require [sparql-to-csv.endpoint :refer [endpoint]]
+            [sparql-to-csv.mustache :as mustache]
             [sparql-to-csv.util :as util]
             [clj-http.client :as client]
             [stencil.core :refer [render-string]]
@@ -121,7 +122,13 @@
    template]
   (with-open [reader (io/reader input)]
     (let [lines (csv/read-csv reader)
-          header (map keyword (first lines))]
+          head (first lines)
+          header (map keyword head)
+          invalid-variable-names (remove mustache/valid-variable-name? head)]
+      (when (seq invalid-variable-names)
+        (util/die (str "Invalid column names: "
+                       (string/join ", " invalid-variable-names)
+                       "\nOnly ASCII characters, ?, !, /, ., and - are allowed.")))
       (csv-seq params
                template
                (map (partial zipmap header) (next lines))

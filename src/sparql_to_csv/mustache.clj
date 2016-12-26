@@ -1,6 +1,6 @@
 (ns sparql-to-csv.mustache
   (:require [sparql-to-csv.util :as util]
-            [stencil.parser :refer [parse]]
+            [stencil.parser :refer [parse valid-tag-content]]
             [slingshot.slingshot :refer [throw+]]
             [clojure.set :refer [subset?]]))
 
@@ -10,13 +10,17 @@
   (->> (parse template)
        (filter (complement string?))
        (mapcat :name)
-       distinct
        set))
 
 (defn is-paged?
   "Is the query in `template` paged?"
   [template]
   (subset? #{:limit :offset} (get-template-variables template)))
+
+(defn valid-variable-name?
+  "Test if `variable-name` has a valid Mustache syntax."
+  [variable-name]
+  (seq (re-matches valid-tag-content variable-name)))
 
 (defn validate
   "Validate the syntax of Mustache in `template`."
