@@ -84,6 +84,8 @@ WHERE {
 }
 ```
 
+The input CSV must have a header with column names.
+
 ## License
 
 Copyright © 2016 Jindřich Mynarz

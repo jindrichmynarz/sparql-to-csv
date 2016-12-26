@@ -93,6 +93,9 @@
     :parse-fn util/->integer
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
+   [nil "--extend" "Extend piped CSV input with the new results instead of replacing it."
+    :id :extend?
+    :default false]
    ["-d" "--delimiter DELIMITER" "Character to delimit cells in the output"
     :default \,]
    [nil "--sleep SLEEP" "Number of miliseconds to pause between requests"

@@ -80,10 +80,11 @@
     (format-query-parse-exception query exception)))
 
 (defn csv-seq
-  [{:keys [delimiter output parallel? start-from]
+  [{:keys [delimiter extend? output parallel? start-from]
     :as params}
    template
-   param-seq]
+   param-seq
+   & [lines & _]]
   (let [append? (pos? start-from)
         map-fn (if parallel? pmap map)
         query-fn (fn [param index]
@@ -97,9 +98,10 @@
                          (sparql-results->clj :header? (and start? (not append?))))))]
     (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
       (dorun (csv/write-csv writer
-                            (->> (map-fn query-fn param-seq (iterate inc 0))
-                                 (take-while seq)
-                                 util/lazy-cat')
+                            (cond->> (->> (map-fn query-fn param-seq (iterate inc 0))
+                                          (take-while seq)
+                                          util/lazy-cat')
+                              extend? (map into (drop start-from lines)))
                             :separator delimiter)))))
 
 (defn paged-query
@@ -118,8 +120,9 @@
     :as params}
    template]
   (with-open [reader (io/reader input)]
-    (let [[head & lines] (csv/read-csv reader)
-          header (map keyword head)]
+    (let [lines (csv/read-csv reader)
+          header (map keyword (first lines))]
       (csv-seq params
                template
-               (map (partial zipmap header) lines)))))
+               (map (partial zipmap header) (next lines))
+               lines))))
