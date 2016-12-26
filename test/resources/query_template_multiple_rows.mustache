@@ -1,0 +1,28 @@
+PREFIX isvz:      <http://linked.opendata.cz/resource/dataset/isvz.cz>
+PREFIX pc:        <http://purl.org/procurement/public-contracts#>
+PREFIX schema:    <http://schema.org/>
+
+SELECT ?contract
+       ?actualPrice
+       ?numberOfTenders
+       ?awardDate
+WHERE {
+  GRAPH isvz: {
+    ?contract pc:contractingAuthority <{{contractingAuthority}}> ;
+      pc:lot ?lot .
+    ?lot pc:awardedTender ?tender .
+    ?tender pc:bidder <{{supplier}}> .
+    OPTIONAL {
+      ?tender pc:awardDate ?awardDate .
+    }
+    OPTIONAL {
+      ?lot pc:actualPrice [
+        schema:priceCurrency "CZK" ;
+        schema:price ?actualPrice
+      ] .
+    }
+    OPTIONAL {
+      ?lot pc:numberOfTenders ?numberOfTenders .
+    }
+  }
+}

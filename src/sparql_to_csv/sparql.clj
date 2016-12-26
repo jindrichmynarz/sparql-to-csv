@@ -24,13 +24,14 @@
   "Convert SPARQL `results` into Clojure data structures.
   `header?` indicates if header should be output.
   Returns an empty sequence when the query has no results."
-  [results & {:keys [header?]}]
+  [results & {:keys [base-line base-header header?]}]
   (let [zipper (-> results xml/parse-str zip/xml-zip)
         variables (vec (zip-xml/xml-> zipper :head :variable (zip-xml/attr :name)))
         results (zip-xml/xml-> zipper :results :result)]
     (reduce (fn [acc result]
-              (conj acc (mapv (some-fn (partial get-binding result) (constantly "")) variables)))
-            (if header? [variables] [])
+              (conj acc (into base-line
+                              (mapv (some-fn (partial get-binding result) (constantly "")) variables))))
+            (if header? [(into base-header variables)] [])
             results)))
 
 (defn execute-query
@@ -87,22 +88,25 @@
    param-seq
    & [lines & _]]
   (let [append? (pos? start-from)
+        [base-header base-lines] (if extend?
+                                   [(first lines) (drop (inc start-from) lines)]
+                                   [[] (repeat [])])
         map-fn (if parallel? pmap map)
-        query-fn (fn [param index]
+        query-fn (fn [param base-line index]
                    (let [start? (zero? index)
                          query (render-string template param)]
-                     (when start?
-                       (when-let [error (invalid-query? query)]
-                         (util/die error)))
+                     (when-let [error (and start? (invalid-query? query))]
+                       (util/die error))
                      (-> query
                          execute-query
-                         (sparql-results->clj :header? (and start? (not append?))))))]
+                         (sparql-results->clj :header? (and start? (not append?))
+                                              :base-line base-line
+                                              :base-header base-header))))]
     (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
       (dorun (csv/write-csv writer
-                            (cond->> (->> (map-fn query-fn param-seq (iterate inc 0))
-                                          (take-while seq)
-                                          util/lazy-cat')
-                              extend? (map into (drop start-from lines)))
+                            (->> (map-fn query-fn param-seq base-lines (iterate inc 0))
+                                 (take-while seq)
+                                 util/lazy-cat')
                             :separator delimiter)))))
 
 (defn paged-query
