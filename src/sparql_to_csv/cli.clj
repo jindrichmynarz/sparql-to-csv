@@ -7,7 +7,8 @@
             [clojure.tools.cli :refer [parse-opts]]
             [mount.core :as mount]
             [clojure.java.io :as io]
-            [slingshot.slingshot :refer [try+]]))
+            [slingshot.slingshot :refer [try+]])
+  (:import (java.io File Reader)))
 
 ; ----- Private functions -----
 
@@ -25,8 +26,7 @@
 
 (defn- error-msg
   [errors]
-  (str "The following errors occurred while parsing your command:\n\n"
-       (util/join-lines errors)))
+  (util/join-lines (cons "The following errors occurred while parsing your command:\n" errors)))
 
 (defn- validate-template
   [template]
@@ -39,18 +39,25 @@
   ; TODO: clojure.spec validation
   )
 
-(defn has-input?
+(defmulti has-input?
   "Test if `input` provides something."
-  ; FIXME: Doesn't work correctly with Leiningen (i.e. using `lein run`).
+  type)
+
+(defmethod has-input? File
   [input]
   (with-open [reader (io/reader input)]
     (.ready reader)))
+
+(defmethod has-input? Reader
+  [input]
+  (let [c (.read input)]
+    (.unread input c)
+    (boolean c)))
 
 (defn- main
   [{:keys [endpoint input]
     :as params}
    template]
-  ; TODO: Handle non-recoverable exceptions
   (validate-params params)
   (validate-template template)
   (let [piped? (has-input? input)
