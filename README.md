@@ -84,7 +84,16 @@ WHERE {
 }
 ```
 
-The input CSV must have a header with column names. In order to be usable in Mustache template, the column names in the input CSV can contain only ASCII characters, `?`, `!`, `/`, `.`, or `-`.
+The input CSV must have a header with column names. In order to be usable in Mustache template, the column names in the input CSV can contain only ASCII characters, `?`, `!`, `/`, `.`, or `-`. For example, `right!` is allowed, while `mélangé` is not.
+
+Piped queries enable to create data processing pipelines. For instance, if the first query is stored in the `persons.mustache` file and the second query is stored as `describe_person.mustache`, then we can run them in pipeline using the following command:
+
+```bash
+sparql_to_csv -e http://dbpedia.org/sparql persons.mustache |
+  sparql_to_csv -e http://dbpedia.org/sparql describe_person.mustache
+```
+
+By default the piped input is replaced by the output query results. However, using the `--extend` parameter extends the input with the results. Each result row is append to its input row. This allows you to combine data from multiple queries.
 
 ## License
 
