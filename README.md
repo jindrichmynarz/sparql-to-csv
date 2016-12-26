@@ -26,7 +26,7 @@ target/sparql_to_csv --endpoint http://localhost:8890/sparql \
                      paged_query.mustache > results.csv
 ```
 
-There are two main use cases for this tool.
+There are two main use cases for this tool: paged queries and piped queries.
 
 ### Paged queries
 
@@ -101,7 +101,7 @@ sparql_to_csv -e http://dbpedia.org/sparql persons.mustache |
   sparql_to_csv -e http://dbpedia.org/sparql describe_person.mustache
 ```
 
-By default the piped input is replaced by the output query results. However, using the `--extend` parameter extends the input with the results. Each result row is append to its input row. This allows you to combine data from multiple queries.
+By default the piped input is replaced by the output query results. However, using the `--extend` parameter extends the input with the results. Each result row is append to its input row. This allows you to combine data from multiple queries. Piped queries can be arbitrarily chained and allow joining data across many SPARQL endpoints.
 
 ## License
 
