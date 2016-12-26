@@ -23,5 +23,6 @@
                                                     com.sun.jmdk/jmxtools
                                                     com.sun.jmx/jmxri]]]
   :main sparql-to-csv.cli
-  :profiles {:uberjar {:aot :all
-             :uberjar-name "sparql_to_csv.jar"}})
+  :profiles {:test {:resource-paths ["test/resources"]}
+             :uberjar {:aot :all
+                       :uberjar-name "sparql_to_csv.jar"}})

@@ -50,6 +50,12 @@
                   (execute-query query :retries (inc retries)))
               (throw+ {:type ::util/endpoint-not-found}))))))
 
+(defn- validate-query
+  "Validate SPARQL syntax of `query`."
+  [query]
+  (try (QueryFactory/create query Syntax/syntaxSPARQL_11) false
+       (catch QueryParseException ex ex)))
+
 (defn- format-line-and-column
   "Format line and column from `exception`."
   [exception]
@@ -58,16 +64,20 @@
     (when-not (some (partial = -1) [line column])
       (format "\nLine: %d, column: %d" line column))))
 
+(defn- format-query-parse-exception
+  [query exception]
+  (when exception
+    (str "Syntax error in SPARQL query:\n\n"
+         query
+         "\n\n"
+         (.getMessage exception)
+         (format-line-and-column exception))))
+
 (defn invalid-query?
   "Test if SPARQL syntax of `query` is invalid."
   [query]
-  (try (QueryFactory/create query Syntax/syntaxSPARQL_11) false
-       (catch QueryParseException ex
-         (str "Syntax error in SPARQL query:\n\n"
-              query
-              "\n\n"
-              (.getMessage ex)
-              (format-line-and-column ex)))))
+  (when-let [exception (validate-query query)]
+    (format-query-parse-exception query exception)))
 
 (defn csv-seq
   [{:keys [delimiter output parallel? start-from]
