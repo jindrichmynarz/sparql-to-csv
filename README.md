@@ -15,7 +15,7 @@ lein uberjar
 Then you can run the JAR via Java to find out about the configuration options:
  
 ```sh
-java -jar sparql_to_csv.jar --help
+java -jar target/sparql_to_csv.jar --help
 ```
 
 There are two main use cases for this tool.
