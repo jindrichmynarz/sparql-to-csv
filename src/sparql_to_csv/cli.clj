@@ -19,7 +19,7 @@
   [summary]
   (util/join-lines ["Stream SPARQL results to CSV."
                     ""
-                    "Usage: java -jar sparql_to_csv.jar [options] query"
+                    "Usage: sparql_to_csv [options] query"
                     ""
                     "Options:"
                     summary]))

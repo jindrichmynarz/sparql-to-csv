@@ -4,18 +4,18 @@ A command-line tool to stream SPARQL results to CSV. The tool is primarily inten
 
 ## Usage
 
-Use a released JAR or compile using [Leiningen](http://leiningen.org):
+Use a released executable or compile using [Leiningen](http://leiningen.org):
 
 ```sh
 git clone https://github.com/jindrichmynarz/sparql-to-csv.git
 cd sparql-to-csv
-lein uberjar
+lein bin
 ```
 
-Then you can run the JAR via Java to find out about the configuration options:
+Then you can run the created executable file to find out about the configuration options:
  
 ```sh
-java -jar target/sparql_to_csv.jar --help
+target/sparql_to_csv --help
 ```
 
 There are two main use cases for this tool.

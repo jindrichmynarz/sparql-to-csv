@@ -23,6 +23,8 @@
                                                     com.sun.jmdk/jmxtools
                                                     com.sun.jmx/jmxri]]]
   :main sparql-to-csv.cli
-  :profiles {:test {:resource-paths ["test/resources"]}
+  :profiles {:dev {:plugins [[lein-binplus "0.4.2"]]}
+             :test {:resource-paths ["test/resources"]}
              :uberjar {:aot :all
-                       :uberjar-name "sparql_to_csv.jar"}})
+                       :uberjar-name "sparql_to_csv.jar"}}
+  :bin {:name "sparql_to_csv"})
