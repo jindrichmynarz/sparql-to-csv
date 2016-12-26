@@ -1,0 +1,39 @@
+PREFIX ares:      <http://linked.opendata.cz/resource/dataset/ares/>
+PREFIX dcterms:   <http://purl.org/dc/terms/>
+PREFIX isvz:      <http://linked.opendata.cz/resource/dataset/isvz.cz>
+PREFIX pc:        <http://purl.org/procurement/public-contracts#>
+PREFIX schema:    <http://schema.org/>
+
+SELECT ?contractingAuthority
+       ?supplier
+       (SAMPLE(?_supplierEstablished) AS ?supplierEstablished)
+       (COUNT(DISTINCT ?contract) AS ?contractCount)
+       (SUM(?actualPrice) AS ?actualPriceSum)
+       (AVG(?numberOfTenders) AS ?avgNumberOfTenders)
+       (MIN(?awardDate) AS ?minAwardDate)
+       (MAX(?awardDate) AS ?maxAwardDate)
+FROM ares:or
+FROM ares:rzp
+FROM isvz:
+WHERE {
+  ?contract pc:contractingAuthority <{{contractingAuthority}}> ;
+    pc:lot ?lot .
+  ?lot pc:awardedTender ?tender .
+  ?tender pc:bidder <{{supplier}}> .
+  <{{supplier}}> dcterms:issued ?_supplierEstablished .
+  OPTIONAL {
+    ?tender pc:awardDate ?awardDate .
+  }
+  OPTIONAL {
+    ?lot pc:actualPrice [
+      schema:priceCurrency "CZK" ;
+      schema:price ?actualPrice
+    ] .
+  }
+  OPTIONAL {
+    ?lot pc:numberOfTenders ?numberOfTenders .
+  }
+}
+GROUP BY ?contractingAuthority ?supplier
+ORDER BY DESC(?contractCount)
+LIMIT 100

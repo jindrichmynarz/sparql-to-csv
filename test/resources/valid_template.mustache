@@ -1,0 +1,21 @@
+PREFIX isvz:      <http://linked.opendata.cz/resource/dataset/isvz.cz>
+PREFIX pc:        <http://purl.org/procurement/public-contracts#>
+
+SELECT ?contractingAuthority ?supplier ?contractCount
+WHERE {
+  {
+    SELECT ?contractingAuthority
+           ?supplier
+           (COUNT(?contract) AS ?contractCount)
+    WHERE {
+      GRAPH isvz: {
+        ?contract pc:contractingAuthority ?contractingAuthority ;
+          pc:lot/pc:awardedTender/pc:bidder ?supplier .
+      }
+    }
+    GROUP BY ?contractingAuthority ?supplier
+    ORDER BY ?contractingAuthority
+  }
+}
+LIMIT {{limit}}
+OFFSET {{offset}}
