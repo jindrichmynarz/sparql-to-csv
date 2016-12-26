@@ -21,7 +21,9 @@ target/sparql_to_csv --help
 Example of use:
 
 ```sh
-target/sparql_to_csv --endpoint http://localhost:8890/sparql --page-size 1000 paged_query.mustache > results.csv
+target/sparql_to_csv --endpoint http://localhost:8890/sparql \
+                     --page-size 1000 \
+                     paged_query.mustache > results.csv
 ```
 
 There are two main use cases for this tool.
