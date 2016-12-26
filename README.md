@@ -84,7 +84,7 @@ WHERE {
 }
 ```
 
-The input CSV must have a header with column names.
+The input CSV must have a header with column names. In order to be usable in Mustache template, the column names in the input CSV can contain only ASCII characters, `?`, `!`, `/`, `.`, or `-`.
 
 ## License
 
