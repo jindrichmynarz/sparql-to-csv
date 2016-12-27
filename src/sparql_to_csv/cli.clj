@@ -14,9 +14,6 @@
 
 ; ----- Private functions -----
 
-(def ^:private non-negative?
-  (complement neg?))
-
 (defn- usage
   [summary]
   (util/join-lines ["Stream SPARQL results to CSV."
@@ -62,15 +59,18 @@
     :as params}
    template]
   (validate-params params)
-  (validate-template template)
-  (let [piped? (has-input? input)
+  (when-not (util/file-exists? template)
+    (util/die (format "File at %s doesn't exist." template)))
+  (let [template' (slurp template)
+        piped? (has-input? input)
         query-fn (if piped? sparql/piped-query sparql/paged-query)]
-    (when-not (or piped? (mustache/is-paged? template))
+    (validate-template template')
+    (when-not (or piped? (mustache/is-paged? template'))
       (util/die "The provided template is missing LIMIT/OFFSET for paging."))
     (try+ (mount/start-with-args params)
           (catch [:type ::util/endpoint-not-found] _
             (util/die (format "SPARQL endpoint <%s> was not found." endpoint))))
-    (try+ (query-fn params template)
+    (try+ (query-fn params template')
           ; Virtuoso-specific spice
           (catch [:type ::util/incomplete-results] _
             (util/die "The endpoint returned incomplete results. Try lowering the page size."))
@@ -83,7 +83,9 @@
 
 (def ^:private cli-options
   [["-e" "--endpoint ENDPOINT" "SPARQL endpoint's URL"
-    :id ::spec/endpoint]
+    :id ::spec/endpoint
+    :validate [(every-pred spec/http? spec/valid-url?)
+               "The endpoint must be a valid absolute HTTP(S) URL."]]
    ["-o" "--output OUTPUT" "Path to the output file"
     :id ::spec/output
     :parse-fn io/as-file
@@ -109,17 +111,17 @@
    [nil "--sleep SLEEP" "Number of miliseconds to pause between requests"
     :id ::spec/sleep
     :parse-fn util/->integer
-    :validate [non-negative? "Pause duration must be a non-negative number."]
+    :validate [spec/non-negative? "Pause duration must be a non-negative number."]
     :default 0]
    [nil "--start-from START_FROM" "Starting offset to skip initial results"
     :id ::spec/start-from
     :parse-fn util/->integer
-    :validate [non-negative? "Starting offset must be a non-negative number."]
+    :validate [spec/non-negative? "Starting offset must be a non-negative number."]
     :default 0]
    [nil "--max-retries MAX_RETRIES" "Number of attempts to retry a failed request"
     :id ::spec/max-retries
     :parse-fn util/->integer
-    :validate [non-negative? "Number of retries must be a non-negative number."]
+    :validate [spec/non-negative? "Number of retries must be a non-negative number."]
     :default 3]
    [nil "--parallel" "Execute queries in parallel"
     :id ::spec/parallel?
@@ -131,11 +133,12 @@
 
 (defn -main
   [& args]
-  (let [{{:keys [::spec/help]
+  (let [{{:keys [::spec/help ::spec/endpoint]
           :as params} :options
          :keys [arguments errors summary]} (parse-opts args cli-options)
         [template] (filter (partial not= "-") arguments)]
     (cond help (util/info (usage summary))
           errors (util/die (error-msg errors))
+          (not endpoint) (util/die "You must provide a SPARQL endpoint URL.")
           (not template) (util/die "You must provide a query template.")
-          :else (main params (slurp template)))))
+          :else (main params template))))

@@ -1,6 +1,6 @@
 # sparql-to-csv
 
-A command-line tool to stream SPARQL results to CSV. The tool is primarily intended to support data preparation for analysis that requires tabular input. It helps you avoid writing ad hoc scripts to piece larger tabular datasets out of results of many SPARQL queries. It allows to generate queries from [Mustache](https://mustache.github.io) templates, either to execute paged queries or to execute queries based on results of other queries. 
+A command-line tool to stream SPARQL results to CSV. The tool is primarily intended to support data preparation for analyses that require tabular input. It helps you avoid writing ad hoc scripts to piece larger tabular datasets out of results of many SPARQL queries. It allows to generate queries from [Mustache](https://mustache.github.io) templates, either to execute paged queries or to execute queries based on results of other queries. 
 
 ## Usage
 

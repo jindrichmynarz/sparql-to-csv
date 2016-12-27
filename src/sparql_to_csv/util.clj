@@ -22,8 +22,8 @@
 
 (defn file-exists?
   "Test if file at `path` exists and is a file."
-  [file]
-  (and (.exists file) (.isFile file)))
+  [path]
+  (and (.exists path) (.isFile path)))
 
 (def join-lines
   (partial string/join \newline))

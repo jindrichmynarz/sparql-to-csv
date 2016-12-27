@@ -12,6 +12,7 @@
                  [clj-http "3.4.1"]
                  [slingshot "0.12.2"]
                  [mount "0.1.11"]
+                 [commons-validator/commons-validator "1.5.1"]
                  [org.apache.jena/jena-core "3.1.1"]
                  [org.apache.jena/jena-arq "3.1.1"]
                  [org.slf4j/slf4j-log4j12 "1.7.1"]

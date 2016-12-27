@@ -1,8 +1,21 @@
 (ns sparql-to-csv.spec
   (:require [clojure.spec :as s])
-  (:import (java.io File Reader Writer)))
+  (:import (java.io File Reader Writer)
+           (org.apache.commons.validator.routines UrlValidator)))
 
-(s/def ::non-negative-int (s/and int? (complement neg?)))
+(def non-negative?
+  (complement neg?))
+
+(def http?
+  (partial re-matches #"^https?:\/\/.*$"))
+
+(def valid-url?
+  "Test if `url` is valid."
+  (let [validator (UrlValidator. UrlValidator/ALLOW_LOCAL_URLS)]
+    (fn [url]
+      (.isValid validator url))))
+
+(s/def ::non-negative-int (s/and int? non-negative?))
 
 (s/def ::positive-int (s/and int? pos?))
 
@@ -10,7 +23,7 @@
 
 (s/def ::delimiter char?)
 
-(s/def ::endpoint string?)
+(s/def ::endpoint (s/and string? http? valid-url?))
 
 (s/def ::extend? boolean?)
 
