@@ -80,6 +80,7 @@
     :as params}
    template
    param-seq
+   stopping-condition
    & [lines & _]]
   (let [append? (pos? start-from)
         [base-header base-lines] (if extend?
@@ -99,7 +100,7 @@
     (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
       (dorun (csv/write-csv writer
                             (->> (map-fn query-fn param-seq base-lines (iterate inc 0))
-                                 (take-while seq)
+                                 (take-while stopping-condition)
                                  util/lazy-cat')
                             :separator delimiter)))))
 
@@ -111,7 +112,8 @@
   (csv-seq params
            template
            (map (partial assoc {:limit page-size} :offset)
-                (iterate (partial + page-size) start-from))))
+                (iterate (partial + page-size) start-from))
+           seq))
 
 (defn piped-query
   "Run the query from `template` with each line of input provided as template parameters."
@@ -130,4 +132,5 @@
       (csv-seq params
                template
                (map (partial zipmap header) (next lines))
+               (constantly true)
                lines))))
