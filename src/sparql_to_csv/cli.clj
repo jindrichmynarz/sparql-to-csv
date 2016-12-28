@@ -39,7 +39,7 @@
                    (s/explain-str ::spec/config params)))))
 
 (defn- main
-  [{:keys [::spec/endpoint ::spec/piped?]
+  [{::spec/keys [endpoint piped?]
     :as params}
    template]
   (validate-params params)
@@ -123,7 +123,7 @@
 
 (defn -main
   [& args]
-  (let [{{:keys [::spec/help? ::spec/endpoint]
+  (let [{{::spec/keys [help? endpoint]
           :as params} :options
          :keys [arguments errors summary]} (parse-opts args cli-options)
         [template] (filter (partial not= "-") arguments)]

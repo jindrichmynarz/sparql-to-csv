@@ -77,8 +77,7 @@
 (defn csv-seq
   "Executes a query generated from SPARQL `template` for each item from `params`.
   Optionally extends input `lines` with the obtained SPARQL results."
-  [{:keys [::spec/extend? ::spec/output ::spec/output-delimiter
-           ::spec/parallel? ::spec/start-from]
+  [{::spec/keys [extend? output output-delimiter parallel? start-from]
     :as params}
    template
    param-seq
@@ -117,7 +116,7 @@
 
 (defn paged-query
   "Run the query from `template` split into LIMIT/OFFSET delimited pages."
-  [{:keys [::spec/page-size ::spec/start-from]
+  [{::spec/keys [page-size start-from]
     :as params}
    template]
   (csv-seq params
@@ -128,7 +127,7 @@
 
 (defn piped-query
   "Run the query from `template` with each line of input provided as template parameters."
-  [{:keys [::spec/input ::spec/input-delimiter]
+  [{::spec/keys [input input-delimiter]
     :as params}
    template]
   (with-open [reader (io/reader input)]
