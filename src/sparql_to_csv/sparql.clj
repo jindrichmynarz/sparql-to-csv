@@ -59,22 +59,13 @@
   (try (QueryFactory/create query Syntax/syntaxSPARQL_11) false
        (catch QueryParseException ex ex)))
 
-(defn- format-line-and-column
-  "Format line and column from `exception`."
-  [exception]
-  (let [line (.getLine exception)
-        column (.getColumn exception)]
-    (when-not (some (partial = -1) [line column])
-      (format "\nLine: %d, column: %d" line column))))
-
 (defn- format-query-parse-exception
   [query exception]
   (when exception
     (str "Syntax error in SPARQL query:\n\n"
          query
          "\n\n"
-         (.getMessage exception)
-         (format-line-and-column exception))))
+         (.getMessage exception))))
 
 (defn invalid-query?
   "Test if SPARQL syntax of `query` is invalid."
