@@ -28,10 +28,14 @@
 (s/def ::input (s/or :file ::file
                      :reader (partial instance? Reader)))
 
+(s/def ::input-delimiter char?)
+
 (s/def ::max-retries ::positive-int)
 
 (s/def ::output (s/or :file ::file
                       :writer (partial instance? Writer)))
+
+(s/def ::output-delimiter char?)
 
 (s/def ::page-size ::positive-int)
 
@@ -43,5 +47,6 @@
 
 (s/def ::start-from ::non-negative-int)
 
-(s/def ::config (s/keys :req [::endpoint ::extend? ::input ::max-retries ::output
-                              ::page-size ::parallel? ::sleep ::start-from]))
+(s/def ::config (s/keys :req [::endpoint ::extend? ::input ::input-delimiter ::max-retries
+                              ::output ::output-delimiter ::page-size ::parallel? ::sleep
+                              ::start-from]))

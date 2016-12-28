@@ -103,10 +103,6 @@ sparql_to_csv -e http://dbpedia.org/sparql persons.mustache |
 
 By default the piped input is replaced by the output query results. However, using the `--extend` parameter extends the input with the results. Each result row is append to its input row. This allows you to combine data from multiple queries. Piped queries can be arbitrarily chained and allow joining data across many SPARQL endpoints.
 
-## Caveats
-
-* Currently supports only comma-delimited CSV.
-
 ## License
 
 Copyright © 2016 Jindřich Mynarz

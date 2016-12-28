@@ -75,7 +75,8 @@
 (defn csv-seq
   "Executes a query generated from SPARQL `template` for each item from `params`.
   Optionally extends input `lines` with the obtained SPARQL results."
-  [{:keys [::spec/extend? ::spec/output ::spec/parallel? ::spec/start-from]
+  [{:keys [::spec/extend? ::spec/output ::spec/output-delimiter
+           ::spec/parallel? ::spec/start-from]
     :as params}
    template
    param-seq
@@ -98,11 +99,13 @@
                                               :base-header base-header))))
         results (->> (map-fn query-fn param-seq base-lines (iterate inc 0))
                      (take-while stopping-condition)
-                     util/lazy-cat')]
+                     util/lazy-cat')
+        write-fn (fn [writer] (csv/write-csv writer results :delimiter output-delimiter))]
+    ; Don't close the standard output
     (if (= output *out*)
-      (csv/write-csv output results)
+      (write-fn output)
       (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
-        (csv/write-csv writer results)))))
+        (write-fn writer)))))
 
 (defn query
   "Run a SPARQL query from `query-string`."
@@ -122,11 +125,11 @@
 
 (defn piped-query
   "Run the query from `template` with each line of input provided as template parameters."
-  [{:keys [::spec/input]
+  [{:keys [::spec/input ::spec/input-delimiter]
     :as params}
    template]
   (with-open [reader (io/reader input)]
-    (let [lines (csv/read-csv reader)
+    (let [lines (csv/read-csv reader :separator input-delimiter)
           head (first lines)
           header (map keyword head)]
       (mustache/validate-header-names head)

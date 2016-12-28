@@ -82,12 +82,18 @@
     :parse-fn util/->integer
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
-   [nil "--piped" "Run piped query"
+   [nil "--piped" "Use piped query parameters"
     :id ::spec/piped?
     :default false]
-   [nil "--extend" "Extend piped CSV input with the new results instead of replacing it."
+   [nil "--extend" "Extend piped CSV input with fetched columns" 
     :id ::spec/extend?
     :default false]
+   [nil "--input-delimiter INPUT_DELIMITER" "Delimiter used in the input CSV"
+    :id ::spec/input-delimiter
+    :default \,]
+   [nil "--output-delimiter OUTPUT_DELIMITER" "Delimiter used in the output CSV"
+    :id ::spec/output-delimiter
+    :default \,]
    [nil "--sleep SLEEP" "Number of miliseconds to pause between requests"
     :id ::spec/sleep
     :parse-fn util/->integer
@@ -113,11 +119,11 @@
 
 (defn -main
   [& args]
-  (let [{{:keys [::spec/help ::spec/endpoint]
+  (let [{{:keys [::spec/help? ::spec/endpoint]
           :as params} :options
          :keys [arguments errors summary]} (parse-opts args cli-options)
         [template] (filter (partial not= "-") arguments)]
-    (cond help (util/info (usage summary))
+    (cond help? (util/info (usage summary))
           errors (util/die (error-msg errors))
           (not endpoint) (util/die "You must provide a SPARQL endpoint URL.")
           (not template) (util/die "You must provide a query template.")
