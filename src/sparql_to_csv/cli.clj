@@ -59,7 +59,7 @@
     :as params}
    template]
   (validate-params params)
-  (when-not (util/file-exists? template)
+  (when-not (util/file-exists? (io/as-file template))
     (util/die (format "File at %s doesn't exist." template)))
   (let [template' (slurp template)
         piped? (has-input? input)
