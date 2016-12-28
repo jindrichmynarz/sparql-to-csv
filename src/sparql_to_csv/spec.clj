@@ -21,8 +21,6 @@
 
 (s/def ::file (partial instance? File))
 
-(s/def ::delimiter char?)
-
 (s/def ::endpoint (s/and string? http? valid-url?))
 
 (s/def ::extend? boolean?)
@@ -39,9 +37,11 @@
 
 (s/def ::parallel? boolean?)
 
+(s/def ::piped? boolean?)
+
 (s/def ::sleep ::non-negative-int)
 
 (s/def ::start-from ::non-negative-int)
 
-(s/def ::config (s/keys :req [::delimiter ::endpoint ::extend? ::input ::max-retries
-                              ::output ::page-size ::parallel? ::sleep ::start-from]))
+(s/def ::config (s/keys :req [::endpoint ::extend? ::input ::max-retries ::output
+                              ::page-size ::parallel? ::sleep ::start-from]))

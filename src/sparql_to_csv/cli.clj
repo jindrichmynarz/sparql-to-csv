@@ -9,8 +9,7 @@
             [clojure.tools.cli :refer [parse-opts]]
             [mount.core :as mount]
             [clojure.java.io :as io]
-            [slingshot.slingshot :refer [try+]])
-  (:import (java.io File Reader)))
+            [slingshot.slingshot :refer [try+]]))
 
 ; ----- Private functions -----
 
@@ -39,38 +38,19 @@
     (util/die (str "The provided arguments are invalid.\n\n"
                    (s/explain-str ::spec/config params)))))
 
-(defmulti has-input?
-  "Test if `input` provides something."
-  type)
-
-(defmethod has-input? File
-  [input]
-  (with-open [reader (io/reader input)]
-    (.ready reader)))
-
-(defmethod has-input? Reader
-  [input]
-  (let [c (.read input)]
-    (.unread input c)
-    (boolean c)))
-
 (defn- main
-  [{:keys [::spec/endpoint ::spec/input]
+  [{:keys [::spec/endpoint ::spec/input ::spec/piped?]
     :as params}
    template]
   (validate-params params)
-  (when-not (util/file-exists? (io/as-file template))
-    (util/die (format "File at %s doesn't exist." template)))
-  (let [template' (slurp template)
-        piped? (has-input? input)
-        query-fn (if piped? sparql/piped-query sparql/paged-query)]
-    (validate-template template')
-    (when-not (or piped? (mustache/is-paged? template'))
-      (util/die "The provided template is missing LIMIT/OFFSET for paging."))
+  (validate-template template)
+  (let [query-fn (cond piped? sparql/piped-query
+                       (mustache/is-paged? template) sparql/paged-query
+                       :else sparql/query)]
     (try+ (mount/start-with-args params)
           (catch [:type ::util/endpoint-not-found] _
             (util/die (format "SPARQL endpoint <%s> was not found." endpoint))))
-    (try+ (query-fn params template')
+    (try+ (query-fn params template)
           ; Virtuoso-specific spice
           (catch [:type ::util/incomplete-results] _
             (util/die "The endpoint returned incomplete results. Try lowering the page size."))
@@ -102,12 +82,12 @@
     :parse-fn util/->integer
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
+   [nil "--piped" "Run piped query"
+    :id ::spec/piped?
+    :default false]
    [nil "--extend" "Extend piped CSV input with the new results instead of replacing it."
     :id ::spec/extend?
     :default false]
-   ["-d" "--delimiter DELIMITER" "Character to delimit cells in the output"
-    :id ::spec/delimiter
-    :default \,]
    [nil "--sleep SLEEP" "Number of miliseconds to pause between requests"
     :id ::spec/sleep
     :parse-fn util/->integer
@@ -141,4 +121,5 @@
           errors (util/die (error-msg errors))
           (not endpoint) (util/die "You must provide a SPARQL endpoint URL.")
           (not template) (util/die "You must provide a query template.")
-          :else (main params template))))
+          (not (util/file-exists? (io/as-file template))) (util/die (format "File at %s doesn't exist." template))
+          :else (main params (slurp template)))))

@@ -10,8 +10,7 @@
             [clojure.zip :as zip]
             [clojure.data.zip.xml :as zip-xml]
             [clojure.data.csv :as csv]
-            [clojure.java.io :as io]
-            [clojure.string :as string])
+            [clojure.java.io :as io])
   (:import (org.apache.jena.query QueryParseException QueryFactory Syntax)))
 
 ; ----- Private functions -----
@@ -76,7 +75,7 @@
 (defn csv-seq
   "Executes a query generated from SPARQL `template` for each item from `params`.
   Optionally extends input `lines` with the obtained SPARQL results."
-  [{:keys [::spec/delimiter ::spec/extend? ::spec/output ::spec/parallel? ::spec/start-from]
+  [{:keys [::spec/extend? ::spec/output ::spec/parallel? ::spec/start-from]
     :as params}
    template
    param-seq
@@ -96,13 +95,19 @@
                          execute-query
                          (sparql-results->clj :header? (and start? (not append?))
                                               :base-line base-line
-                                              :base-header base-header))))]
-    (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
-      (dorun (csv/write-csv writer
-                            (->> (map-fn query-fn param-seq base-lines (iterate inc 0))
-                                 (take-while stopping-condition)
-                                 util/lazy-cat')
-                            :separator delimiter)))))
+                                              :base-header base-header))))
+        results (->> (map-fn query-fn param-seq base-lines (iterate inc 0))
+                     (take-while stopping-condition)
+                     util/lazy-cat')]
+    (if (= output *out*)
+      (csv/write-csv output results)
+      (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
+        (csv/write-csv writer results)))))
+
+(defn query
+  "Run a SPARQL query from `query-string`."
+  [params query-string]
+  (csv-seq params query-string [{}] (constantly true)))
 
 (defn paged-query
   "Run the query from `template` split into LIMIT/OFFSET delimited pages."
@@ -123,12 +128,8 @@
   (with-open [reader (io/reader input)]
     (let [lines (csv/read-csv reader)
           head (first lines)
-          header (map keyword head)
-          invalid-variable-names (remove mustache/valid-variable-name? head)]
-      (when (seq invalid-variable-names)
-        (util/die (str "Invalid column names: "
-                       (string/join ", " invalid-variable-names)
-                       "\nOnly ASCII characters, ?, !, /, ., and - are allowed.")))
+          header (map keyword head)]
+      (mustache/validate-header-names head)
       (csv-seq params
                template
                (map (partial zipmap header) (next lines))
