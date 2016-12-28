@@ -23,6 +23,8 @@
 (defn sparql-results->clj
   "Convert SPARQL `results` into Clojure data structures.
   `header?` indicates if header should be output.
+  `base-line` is a row (a vector) of values to which to append newly fetched columns.
+  `base-header` is a header row for the `base-line`.
   Returns an empty sequence when the query has no results."
   [results & {:keys [base-line base-header header?]}]
   (let [zipper (-> results xml/parse-str zip/xml-zip)
