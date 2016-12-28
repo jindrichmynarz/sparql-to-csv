@@ -27,9 +27,10 @@
   "Validate if `header` contains only valid Mustache variables."
   [header]
   (when-let [invalid-variable-names (seq (remove valid-variable-name? header))]
-    (util/die (str "Invalid column names: "
-                   (string/join ", " invalid-variable-names)
-                   "\nOnly ASCII characters, ?, !, /, ., and - are allowed."))))
+    (throw+ {:type ::util/invalid-column-names
+             :message (str "Invalid column names: "
+                           (string/join ", " invalid-variable-names)
+                           "\nOnly ASCII characters, ?, !, /, ., and - are allowed.")})))
 
 (defn validate
   "Validate the syntax of Mustache in `template`."

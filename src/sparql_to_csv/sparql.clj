@@ -91,7 +91,8 @@
                    (let [start? (zero? index)
                          query (render-string template param)]
                      (when-let [error (and start? (invalid-query? query))]
-                       (util/die error))
+                       (throw+ {:type ::util/invalid-query
+                                :message error}))
                      (-> query
                          execute-query
                          (sparql-results->clj :header? (and start? (not append?))

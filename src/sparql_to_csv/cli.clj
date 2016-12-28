@@ -39,7 +39,7 @@
                    (s/explain-str ::spec/config params)))))
 
 (defn- main
-  [{:keys [::spec/endpoint ::spec/input ::spec/piped?]
+  [{:keys [::spec/endpoint ::spec/piped?]
     :as params}
    template]
   (validate-params params)
@@ -56,6 +56,10 @@
             (util/die "The endpoint returned incomplete results. Try lowering the page size."))
           (catch [:type ::util/not-found] _
             (util/die (format "SPARQL endpoint <%s> is hiding." endpoint)))
+          (catch [:type ::util/invalid-column-names] {:keys [message]}
+            (util/die message))
+          (catch [:type ::util/invalid-query] {:keys [message]}
+            (util/die message))
           (catch [:status 500] {:keys [body]}
             (util/die body)))))
 
