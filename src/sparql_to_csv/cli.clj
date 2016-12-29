@@ -116,6 +116,9 @@
    [nil "--parallel" "Execute queries in parallel"
     :id ::spec/parallel?
     :default false]
+   [nil "--skip-sparql-validation" "Skip validation of SPARQL syntax"
+    :id ::spec/skip-sparql-validation?
+    :default false]
    ["-h" "--help" "Display help information"
     :id ::spec/help?]])
 

@@ -77,7 +77,7 @@
 (defn csv-seq
   "Executes a query generated from SPARQL `template` for each item from `params`.
   Optionally extends input `lines` with the obtained SPARQL results."
-  [{::spec/keys [extend? output output-delimiter parallel? start-from]
+  [{::spec/keys [extend? output output-delimiter parallel? skip-sparql-validation? start-from]
     :as params}
    template
    param-seq
@@ -91,7 +91,7 @@
         query-fn (fn [param base-line index]
                    (let [start? (zero? index)
                          query (render-string template param)]
-                     (when-let [error (and start? (invalid-query? query))]
+                     (when-let [error (and (not skip-sparql-validation?) start? (invalid-query? query))]
                        (throw+ {:type ::util/invalid-query
                                 :message error}))
                      (-> query

@@ -43,10 +43,12 @@
 
 (s/def ::piped? boolean?)
 
+(s/def ::skip-sparql-validation? boolean?)
+
 (s/def ::sleep ::non-negative-int)
 
 (s/def ::start-from ::non-negative-int)
 
 (s/def ::config (s/keys :req [::endpoint ::extend? ::input ::input-delimiter ::max-retries
-                              ::output ::output-delimiter ::page-size ::parallel? ::sleep
-                              ::start-from]))
+                              ::output ::output-delimiter ::page-size ::parallel? ::skip-sparql-validation?
+                              ::sleep ::start-from]))
