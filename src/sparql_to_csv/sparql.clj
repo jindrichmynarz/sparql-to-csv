@@ -127,10 +127,17 @@
 
 (defn piped-query
   "Run the query from `template` with each line of input provided as template parameters."
-  [{::spec/keys [input input-delimiter]
-    :as params}
-   template]
-  (with-open [reader (io/reader input)]
+  ([{::spec/keys [input]
+     :as params}
+    template]
+   (if (= input *in*)
+     (piped-query params template (io/reader input)) ; Don't close standard input
+     (with-open [reader (io/reader input)]
+       (piped-query params template reader))))
+  ([{::spec/keys [input-delimiter]
+     :as params}
+    template
+    reader]
     (let [lines (csv/read-csv reader :separator input-delimiter)
           head (first lines)
           header (map keyword head)]
