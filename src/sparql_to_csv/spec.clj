@@ -41,8 +41,6 @@
 
 (s/def ::parallel? boolean?)
 
-(s/def ::piped? boolean?)
-
 (s/def ::skip-sparql-validation? boolean?)
 
 (s/def ::sleep ::non-negative-int)

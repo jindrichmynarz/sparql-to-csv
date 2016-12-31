@@ -9,7 +9,8 @@
             [clojure.tools.cli :refer [parse-opts]]
             [mount.core :as mount]
             [clojure.java.io :as io]
-            [slingshot.slingshot :refer [try+]]))
+            [slingshot.slingshot :refer [try+]])
+  (:import (java.io File Reader)))
 
 ; ----- Private functions -----
 
@@ -38,13 +39,31 @@
     (util/die (str "The provided arguments are invalid.\n\n"
                    (s/explain-str ::spec/config params)))))
 
+(defprotocol HasInput?
+  "Test if `input` provides something."
+  ; FIXME: Doesn't work correctly with Leiningen (i.e. using `lein run`).
+  (has-input? [input]))
+
+(extend-protocol HasInput?
+  File
+  (has-input?
+    [input]
+    (with-open [reader (io/reader input)]
+      (has-input? reader)))
+
+  Reader
+  (has-input?
+    [input]
+    (.ready input)))
+  
 (defn- main
-  [{::spec/keys [endpoint piped?]
+  [{::spec/keys [endpoint input]
     :as params}
    template]
   (validate-params params)
   (validate-template template)
-  (let [query-fn (cond piped? sparql/piped-query
+  (let [piped? (has-input? input)
+        query-fn (cond piped? sparql/piped-query
                        (mustache/is-paged? template) sparql/paged-query
                        :else sparql/query)]
     (try+ (mount/start-with-args params)
@@ -74,21 +93,18 @@
     :id ::spec/output
     :parse-fn io/as-file
     :default *out*
-    :default-desc "STDIN"]
+    :default-desc "STDOUT"]
    ["-i" "--input INPUT" "Path to the input file"
     :id ::spec/input
     :validate [util/file-exists? "The input file does not exist."]
     :parse-fn io/as-file
     :default *in*
-    :default-desc "STDOUT"]
+    :default-desc "STDIN"]
    ["-p" "--page-size PAGE_SIZE" "Number of results to fetch in one request"
     :id ::spec/page-size
     :parse-fn util/->integer
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
-   [nil "--piped" "Use piped query parameters"
-    :id ::spec/piped?
-    :default false]
    [nil "--extend" "Extend piped CSV input with fetched columns" 
     :id ::spec/extend?
     :default false]
