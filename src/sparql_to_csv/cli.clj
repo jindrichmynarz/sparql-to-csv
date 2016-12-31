@@ -146,7 +146,7 @@
           :as params} :options
          :keys [arguments errors summary]} (parse-opts args cli-options)
         [template] (filter (partial not= "-") arguments)]
-    (cond help? (util/info (usage summary))
+    (cond (or help? (not (seq args))) (util/info (usage summary))
           errors (util/die (error-msg errors))
           (not endpoint) (util/die "You must provide a SPARQL endpoint URL.")
           (not template) (util/die "You must provide a query template.")
