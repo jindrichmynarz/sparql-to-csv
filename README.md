@@ -4,7 +4,7 @@ A command-line tool to stream SPARQL results to CSV. The tool is primarily inten
 
 ## Usage
 
-Use a [released executable](https://github.com/jindrichmynarz/sparql-to-csv/releases) or compile using [Leiningen](http://leiningen.org):
+Use a [released executable](https://github.com/jindrichmynarz/sparql-to-csv/releases) or compile using [Leiningen](http://leiningen.org) and [lein-binplus](https://github.com/BrunoBonacci/lein-binplus):
 
 ```sh
 git clone https://github.com/jindrichmynarz/sparql-to-csv.git
