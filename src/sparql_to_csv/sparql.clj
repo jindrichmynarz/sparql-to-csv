@@ -105,7 +105,7 @@
         write-fn (fn [writer] (csv/write-csv writer results :delimiter output-delimiter))]
     ; Don't close the standard output
     (if (= output *out*)
-      (write-fn output)
+      (do (write-fn output) (flush))
       (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
         (write-fn writer)))))
 
