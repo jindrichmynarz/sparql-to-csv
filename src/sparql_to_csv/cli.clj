@@ -7,8 +7,9 @@
             [sparql-to-csv.spec :as spec]
             [clojure.spec :as s]
             [clojure.tools.cli :refer [parse-opts]]
-            [mount.core :as mount]
+            [clojure.string :as string]
             [clojure.java.io :as io]
+            [mount.core :as mount]
             [slingshot.slingshot :refer [try+]])
   (:import (java.io File Reader)))
 
@@ -57,7 +58,7 @@
     (.ready input)))
   
 (defn- main
-  [{::spec/keys [endpoint input]
+  [{::spec/keys [auth endpoint input]
     :as params}
    template]
   (validate-params params)
@@ -67,6 +68,8 @@
                        (mustache/is-paged? template) sparql/paged-query
                        :else sparql/query)]
     (try+ (mount/start-with-args params)
+          (catch [:type ::util/invalid-auth] _
+            (util/die (format "Username and password '%s' are invalid." auth)))
           (catch [:type ::util/endpoint-not-found] _
             (util/die (format "SPARQL endpoint <%s> was not found." endpoint))))
     (try+ (query-fn params template)
@@ -77,7 +80,7 @@
             (util/die (format "SPARQL endpoint <%s> is hiding." endpoint)))
           (catch [:type ::util/invalid-column-names] {:keys [message]}
             (util/die message))
-          (catch [:type ::util/invalid-query] {:keys [message]}
+          (catch [:type ::util/invalid-sparql-syntax] {:keys [message]}
             (util/die message))
           (catch [:status 500] {:keys [body]}
             (util/die body)))))
@@ -89,6 +92,10 @@
     :id ::spec/endpoint
     :validate [(every-pred spec/http? spec/valid-url?)
                "The endpoint must be a valid absolute HTTP(S) URL."]]
+   ["-a" "--auth AUTH" "Endpoint's authorization written as username:password"
+    :id ::spec/auth
+    :parse-fn #(string/split % #":")
+    :validate [(comp (partial = 2) count) "Both username and password must be provided."]]
    ["-o" "--output OUTPUT" "Path to the output file"
     :id ::spec/output
     :parse-fn io/as-file
@@ -106,8 +113,7 @@
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
    [nil "--extend" "Extend piped CSV input with fetched columns" 
-    :id ::spec/extend?
-    :default false]
+    :id ::spec/extend?]
    [nil "--input-delimiter INPUT_DELIMITER" "Delimiter used in the input CSV"
     :id ::spec/input-delimiter
     :default \,]
@@ -130,11 +136,9 @@
     :validate [spec/non-negative? "Number of retries must be a non-negative number."]
     :default 3]
    [nil "--parallel" "Execute queries in parallel"
-    :id ::spec/parallel?
-    :default false]
+    :id ::spec/parallel?]
    [nil "--skip-sparql-validation" "Skip validation of SPARQL syntax"
-    :id ::spec/skip-sparql-validation?
-    :default false]
+    :id ::spec/skip-sparql-validation?]
    ["-h" "--help" "Display help information"
     :id ::spec/help?]])
 

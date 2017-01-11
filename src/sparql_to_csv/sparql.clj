@@ -11,7 +11,8 @@
             [clojure.data.zip.xml :as zip-xml]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io])
-  (:import (org.apache.jena.query QueryParseException QueryFactory Syntax)))
+  (:import (org.apache.jena.query QueryParseException QueryFactory Syntax)
+           (org.apache.jena.update UpdateFactory)))
 
 ; ----- Private functions -----
 
@@ -36,15 +37,25 @@
             (if header? [(into base-header variables)] [])
             results)))
 
+(defn- prefix-virtuoso-operation
+  "Prefix `sparql-string` for Virtuoso if `virtuoso?` is true."
+  [^Boolean virtuoso?
+   ^String sparql-string]
+  (if virtuoso?
+    (str "DEFINE sql:log-enable 2\n" sparql-string)
+    sparql-string))
+
 (defn execute-query
   "Execute SPARQL `query`." 
-  [query & {:keys [retries]
+  [query & {:keys [retries update?]
             :or {retries 0}}]
-  (let [{:keys [max-retries sparql-endpoint sleep virtuoso?]} endpoint
-        params {:query-params {"query" query}
-                :throw-entire-message? true}]
+  (let [{:keys [auth max-retries sparql-endpoint sleep virtuoso?]} endpoint
+        [http-fn params-key] (if update? [client/get :query-params] [client/post :form-params])
+        params (cond-> {params-key {"query" (prefix-virtuoso-operation virtuoso? query)}
+                        :throw-entire-message? true}
+                 auth (assoc :digest-auth auth))]
     (when-not (zero? sleep) (Thread/sleep sleep))
-    (try+ (let [response (client/get sparql-endpoint params)]
+    (try+ (let [response (http-fn sparql-endpoint params)]
             (if (and virtuoso? (= (get-in response [:headers "X-SQL-State"]) "S1TAT"))
               (throw+ {:type ::util/incomplete-results})
               (:body response)))
@@ -54,36 +65,50 @@
                   (execute-query query :retries (inc retries)))
               (throw+ {:type ::util/endpoint-not-found}))))))
 
-(defn- validate-query
-  "Validate SPARQL syntax of `query`."
-  [query]
-  (try (QueryFactory/create query Syntax/syntaxSPARQL_11) false
-       (catch QueryParseException ex ex)))
+(def sparql-update?
+  "A simple test of SPARQL Update operation"
+  (comp boolean
+        (some-fn (partial re-find #"(?i)(^|\s)\b(DELETE|INSERT)\s+(WHERE|DATA)?")
+                 (partial re-find #"(?i)(^|\s)\b(LOAD|CLEAR|CREATE|DROP|COPY|MOVE|ADD)\s+"))))
 
-(defn- format-query-parse-exception
-  [query exception]
-  (when exception
-    (str "Syntax error in SPARQL query:\n\n"
-         query
-         "\n\n"
-         (.getMessage exception))))
+(defn- format-parse-exception
+  [sparql exception]
+  (str "SPARQL syntax error:\n\n"
+       sparql
+       "\n\n"
+       (.getMessage exception)))
 
-(defn invalid-query?
-  "Test if SPARQL syntax of `query` is invalid."
-  [query]
-  (when-let [exception (validate-query query)]
-    (format-query-parse-exception query exception)))
+(defn validate-query
+  [sparql]
+  (QueryFactory/create sparql Syntax/syntaxSPARQL_11))
+
+(defn validate-update
+  [sparql]
+  (UpdateFactory/create sparql Syntax/syntaxSPARQL_11))
+
+(defn validate-sparql
+  "Validate syntax of `sparql`. Test as a SPARQL query by default.
+  Test as a SPARQL Update operation if `update?`."
+  [sparql & {:keys [update?]}]
+  (let [validation-fn (if update? validate-update validate-query)]
+    (try (validation-fn sparql)
+         (catch QueryParseException exception
+           (throw+ {:type ::util/invalid-sparql-syntax
+                    :message (format-parse-exception sparql exception)})))))
 
 (defn csv-seq
   "Executes a query generated from SPARQL `template` for each item from `params`.
   Optionally extends input `lines` with the obtained SPARQL results."
-  [{::spec/keys [extend? output output-delimiter parallel? skip-sparql-validation? start-from]
+  [{::spec/keys [extend? output output-delimiter parallel?
+                 skip-sparql-validation? start-from]
+    :keys [sparql-syntax]
     :as params}
    template
    param-seq
    stopping-condition
    & [lines & _]]
   (let [append? (pos? start-from)
+        update? (sparql-update? template)
         [base-header base-lines] (if extend?
                                    [(first lines) (drop (inc start-from) lines)]
                                    [[] (repeat [])])
@@ -91,23 +116,25 @@
         query-fn (fn [param base-line index]
                    (let [start? (zero? index)
                          query (render-string template param)]
-                     (when-let [error (and (not skip-sparql-validation?) start? (invalid-query? query))]
-                       (throw+ {:type ::util/invalid-query
-                                :message error}))
-                     (-> query
-                         execute-query
-                         (sparql-results->clj :header? (and start? (not append?))
-                                              :base-line base-line
-                                              :base-header base-header))))
+                     (and (not skip-sparql-validation?)
+                          start?
+                          (validate-sparql query :update? update?))
+                     (when update? (println (format "Executing SPARQL update %d" (inc index))))
+                     (cond-> (execute-query query :update? update?)
+                             (not update?) (sparql-results->clj :header? (and start? (not append?))
+                                                                :base-line base-line
+                                                                :base-header base-header))))
         results (->> (map-fn query-fn param-seq base-lines (iterate inc 0))
                      (take-while stopping-condition)
-                     util/lazy-cat')
-        write-fn (fn [writer] (csv/write-csv writer results :delimiter output-delimiter))]
-    ; Don't close the standard output
-    (if (= output *out*)
-      (do (write-fn output) (flush))
-      (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
-        (write-fn writer)))))
+                     util/lazy-cat')]
+    (if update?
+      (dorun results)
+      (let [write-fn (fn [writer] (csv/write-csv writer results :delimiter output-delimiter))]
+        ; Don't close the standard output
+        (if (= output *out*)
+          (do (write-fn output) (flush))
+          (with-open [writer (io/writer output :append (and append? (util/file-exists? output)))]
+            (write-fn writer)))))))
 
 (defn query
   "Run a SPARQL query from `query-string`."

@@ -8,15 +8,19 @@
 
 (defn init-endpoint
   "Ping endpoint to test if it is up." 
-  [{:keys [::spec/endpoint ::spec/max-retries ::spec/sleep]}]
+  [{::spec/keys [auth endpoint max-retries sleep]}]
   (try+ (let [virtuoso? (-> endpoint
-                            (client/head {:throw-entire-message? true})
+                            (client/head (cond-> {:throw-entire-message? true}
+                                           auth (assoc :digest-auth auth)))
                             (get-in [:headers "Server"] "")
                             (string/includes? "Virtuoso"))]
           {:sparql-endpoint endpoint
+           :auth auth
            :max-retries max-retries
            :sleep sleep
            :virtuoso? virtuoso?})
+        (catch [:status 401] _
+          (throw+ {:type ::util/invalid-auth}))
         (catch [:status 404] _
           (throw+ {:type ::util/endpoint-not-found}))))
 
