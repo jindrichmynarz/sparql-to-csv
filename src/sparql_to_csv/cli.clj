@@ -56,14 +56,14 @@
   (has-input?
     [input]
     (.ready input)))
-  
+
 (defn- main
   [{::spec/keys [auth endpoint input]
     :as params}
    template]
   (validate-params params)
   (validate-template template)
-  (let [piped? (has-input? input)
+  (let [piped? (or (pos? (.available System/in)) (has-input? input))
         query-fn (cond piped? sparql/piped-query
                        (mustache/is-paged? template) sparql/paged-query
                        :else sparql/query)]
