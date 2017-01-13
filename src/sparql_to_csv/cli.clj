@@ -103,9 +103,9 @@
     :default-desc "STDOUT"]
    ["-i" "--input INPUT" "Path to the input file"
     :id ::spec/input
-    ;:validate [util/file-exists? "The input file does not exist."]
-    ;:parse-fn io/as-file
-    ;:default *in*
+    :validate [util/file-exists? "The input file does not exist."]
+    :parse-fn io/as-file
+    :default *in*
     :default-desc "STDIN"]
    ["-p" "--page-size PAGE_SIZE" "Number of results to fetch in one request"
     :id ::spec/page-size

@@ -31,6 +31,8 @@
 
 (s/def ::extend? true?)
 
+(s/def ::help? true?)
+
 (s/def ::input (s/or :file ::file
                      :reader (partial instance? Reader)))
 
