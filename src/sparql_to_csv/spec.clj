@@ -55,4 +55,4 @@
 
 (s/def ::config (s/keys :req [::endpoint ::input ::input-delimiter ::max-retries
                               ::output ::output-delimiter ::page-size ::sleep ::start-from]
-                        :opt [::auth ::extend? ::parallel? ::skip-sparql-validation?]))
+                        :opt [::auth ::extend? ::help? ::parallel? ::skip-sparql-validation?]))
