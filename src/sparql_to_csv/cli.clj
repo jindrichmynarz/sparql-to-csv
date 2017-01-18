@@ -40,31 +40,13 @@
     (util/die (str "The provided arguments are invalid.\n\n"
                    (s/explain-str ::spec/config params)))))
 
-(defprotocol HasInput?
-  "Test if `input` provides something."
-  ; FIXME: Doesn't work correctly with Leiningen (i.e. using `lein run`).
-  (has-input? [input]))
-
-(extend-protocol HasInput?
-  File
-  (has-input?
-    [input]
-    (with-open [reader (io/reader input)]
-      (has-input? reader)))
-
-  Reader
-  (has-input?
-    [input]
-    (.ready input)))
-
 (defn- main
-  [{::spec/keys [auth endpoint input]
+  [{::spec/keys [auth endpoint input piped?]
     :as params}
    template]
   (validate-params params)
   (validate-template template)
-  (let [piped? (or (pos? (.available System/in)) (has-input? input))
-        query-fn (cond piped? sparql/piped-query
+  (let [query-fn (cond piped? sparql/piped-query
                        (mustache/is-paged? template) sparql/paged-query
                        :else sparql/query)]
     (try+ (mount/start-with-args params)
@@ -112,6 +94,8 @@
     :parse-fn util/->integer
     :validate [pos? "Number of results must be a positive number."]
     :default 10000]
+   [nil "--piped" "Run piped query"
+    :id ::spec/piped?]
    [nil "--extend" "Extend piped CSV input with fetched columns" 
     :id ::spec/extend?]
    [nil "--input-delimiter INPUT_DELIMITER" "Delimiter used in the input CSV"
