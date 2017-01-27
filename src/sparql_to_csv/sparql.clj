@@ -50,7 +50,7 @@
   [query & {:keys [retries update?]
             :or {retries 0}}]
   (let [{:keys [auth max-retries sparql-endpoint sleep virtuoso?]} endpoint
-        [http-fn params-key] (if update? [client/get :query-params] [client/post :form-params])
+        [http-fn params-key] (if update? [client/post :form-params] [client/get :query-params])
         params (cond-> {params-key {"query" (prefix-virtuoso-operation virtuoso? query)}
                         :throw-entire-message? true}
                  auth (assoc :digest-auth auth))]
