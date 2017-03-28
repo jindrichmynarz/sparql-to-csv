@@ -16,7 +16,7 @@
 (defn is-paged?
   "Is the query in `template` paged?"
   [template]
-  (subset? #{:limit :offset} (get-template-variables template)))
+  (subset? #{:limit} (get-template-variables template)))
 
 (defn valid-variable-name?
   "Test if `variable-name` has a valid Mustache syntax."
