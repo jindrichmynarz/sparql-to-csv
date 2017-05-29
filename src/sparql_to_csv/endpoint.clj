@@ -4,7 +4,8 @@
             [mount.core :as mount :refer [defstate]]
             [clj-http.client :as client]
             [clojure.string :as string]
-            [slingshot.slingshot :refer [try+ throw+]]))
+            [slingshot.slingshot :refer [try+ throw+]])
+  (:import (java.net UnknownHostException)))
 
 (defn init-endpoint
   "Ping endpoint to test if it is up." 
@@ -19,6 +20,8 @@
            :max-retries max-retries
            :sleep sleep
            :virtuoso? virtuoso?})
+        (catch UnknownHostException _
+          (throw+ {:type ::util/unknown-host}))
         (catch [:status 401] _
           (throw+ {:type ::util/invalid-auth}))
         (catch [:status 404] _

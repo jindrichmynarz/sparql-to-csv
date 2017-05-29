@@ -50,6 +50,8 @@
                        (mustache/is-paged? template) sparql/paged-query
                        :else sparql/query)]
     (try+ (mount/start-with-args params)
+          (catch [:type ::util/unknown-host] _
+            (util/die (format "The domain of <%s> doesn't exist." endpoint)))
           (catch [:type ::util/invalid-auth] _
             (util/die (format "Username and password '%s' are invalid." auth)))
           (catch [:type ::util/endpoint-not-found] _
