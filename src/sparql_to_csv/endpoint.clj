@@ -8,10 +8,12 @@
   (:import (java.net UnknownHostException)))
 
 (defn init-endpoint
-  "Ping endpoint to test if it is up." 
+  "Ping endpoint to test if it is up."
   [{::spec/keys [auth endpoint max-retries sleep]}]
-  (try+ (let [virtuoso? (-> endpoint
-                            (client/head (cond-> {:throw-entire-message? true}
+  (try+ (let [test-query "ASK { [] ?p [] . }"
+              virtuoso? (-> endpoint
+                            (client/get (cond-> {:query-params {"query" test-query}
+                                                 :throw-entire-message? true}
                                            auth (assoc :digest-auth auth)))
                             (get-in [:headers "Server"] "")
                             (string/includes? "Virtuoso"))]
